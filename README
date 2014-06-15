@@ -1,0 +1,13 @@
+MOS is an OS written for ARM Cortex-M3 processors. It is developed for fun and
+for self-learning purposes. It is NOT intended to be optmized or portable, but
+focuses on being easily understandable.
+
+MOS is developed by Maxime Bernelas <maxime@bernelas.fr>.
+
+Compiling instructions:
+* MOS is designed to compile using a GNU toolchain able to produce code for
+  ARM Cortex-M3 targets. Make sure you have one installed if you try to compile
+  MOS
+* Just run 'make' under the root directory and it should produce an executable
+  binary named 'mos.bin'
+* Enjoy !
