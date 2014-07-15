@@ -4,8 +4,8 @@ STACK_SIZE = 0x400;
 
 MEMORY
 {
-    rom (rx) : ORIGIN = 0x00000000, LENGTH = 256K
-    ram  (rwx) : ORIGIN = 0x20000000, LENGTH =  8K
+    rom (rx) : ORIGIN = 0x00000000, LENGTH = 128K
+    ram  (rwx) : ORIGIN = 0x20000000, LENGTH =  20K
 }
 
 __stack_base = ORIGIN(ram) + LENGTH(ram);
@@ -49,7 +49,7 @@ SECTIONS
     } > ram
 
     /* Nothing is put in this section, but it reserves space so that we get an
-     * error if it doesn't fit in RAM
+     * error if it doesn't fit into RAM
      */
     .stack :
     {

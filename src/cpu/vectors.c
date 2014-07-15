@@ -64,4 +64,7 @@ func_ptr vectors[CPU_INT_NB_VECTORS] __attribute__((section (".interrupt_vectors
 	NULL,                          /* Reserved */
 	handler_pendSV,
 	handler_systick,
+
+	/* Interrupt handlers */
+	[CPU_INT_IRQ_BASE_INDEX ... (CPU_INT_NB_VECTORS - 1)] = handler_interrupt
 };

@@ -44,4 +44,7 @@ void handler_pendSV(void);
 /** Systick handler */
 void handler_systick(void);
 
+/** Interrupt handler */
+void handler_interrupt(void);
+
 #endif
