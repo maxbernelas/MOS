@@ -1,6 +1,7 @@
-MOS is an OS written for ARM Cortex-M3 processors. It is developed for fun and
-for self-learning purposes. It is NOT intended to be optmized or portable, but
-focuses on being easily understandable.
+MOS is an OS written for a STM32F103 microcontroller (which features an ARM
+Cortex-M3 core). It is developed for fun and for self-learning purposes. It is
+NOT intended to be optmized or portable, but focuses on being easily
+understandable.
 
 MOS is developed by Maxime Bernelas <maxime@bernelas.fr>.
 
