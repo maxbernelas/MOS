@@ -25,47 +25,66 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file vectors.c
+ * \file nvic.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Vector table for MOS
+ * Nested vectored interrupt controller management
  */
 #include <kernel/stdint.h>
-#include <kernel/stddef.h>
-#include <kernel/handlers.h>
 #include <cpu/cpu_interrupts.h>
+#include <cpu/cpu_mapping.h>
 
-/** Stack base pointer (defined by linker) */
-extern uint32_t __stack_base;
-
-/** Type of a function pointer */
-typedef void (*func_ptr)(void);
-
-/** Assembly wrapper for system calls */
-extern void __svc_handler(void);
-
-/** Vector table */
-func_ptr vectors[CPU_INT_NB_VECTORS]
-__attribute__((section (".interrupt_vectors"))) =
+/*******************************************************************************
+ * Private definitions
+ ******************************************************************************/
+/** NVIC register map */
+typedef struct
 {
-	(func_ptr)&__stack_base,     /* OS stack base */
-	kernel_entry,
+	uint32_t iser[3]; /**< Interrupt set-enable registers */
+	uint32_t icer[3]; /**< Interrupt clear-enable registers */
+	uint32_t ispr[3]; /**< Interrupt set-pending registers */
+	uint32_t icpr[3]; /**< Interrupt clear-pending registers */
+	uint32_t iabr[3]; /**< Interrupt active bit registers */
+	uint32_t ipr[20]; /**< Interrupt priority registers */
+} nvic_regs;
 
-	/* System handlers */
-	handler_nmi,
-	handler_hard_fault,
-	handler_memmanage,
-	handler_busfault,
-	handler_usage,
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	__svc_handler,
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	handler_pendSV,
-	handler_systick,
+/** Pointer used to access the NVIC */
+static volatile nvic_regs *regs = (volatile nvic_regs *)CPU_NVIC_BASE;
 
-	/* Interrupt handlers */
-	[CPU_INT_IRQ_BASE_INDEX ... (CPU_INT_NB_VECTORS - 1)] = handler_interrupt
-};
+/*******************************************************************************
+ * Public definitions
+ ******************************************************************************/
+int nvic_irq_enable(int irq)
+{
+	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
+	{
+		return 1;
+	}
+
+	regs->iser[irq / 32] = (1U << (irq % 32));
+
+	return 0;
+}
+
+int nvic_irq_disable(int irq)
+{
+	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
+	{
+		return 1;
+	}
+
+	regs->icer[irq / 32] = (1U << (irq % 32));
+
+	return 0;
+}
+
+int nvic_irq_clear(int irq)
+{
+	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
+	{
+		return 1;
+	}
+
+	regs->ispr[irq / 32] = (1U << (irq % 32));
+
+	return 0;
+}

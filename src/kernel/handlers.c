@@ -84,9 +84,3 @@ void handler_systick(void)
 	while(1)
 		;
 }
-
-void handler_interrupt(void)
-{
-	while(1)
-		;
-}

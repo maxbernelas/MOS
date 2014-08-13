@@ -25,75 +25,86 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file cpu_utils.h
+ * \file irq.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Low-level CPU-related primitives
+ * IRQ handlers management
  */
+#include <cpu/cpu_interrupts.h>
+#include <kernel/handlers.h>
 #include <cpu/cpu_utils.h>
+#include <kernel/stddef.h>
+#include <kernel/irq.h>
 
 /*******************************************************************************
  * Private definitions
  ******************************************************************************/
-/** Value of the IRQ enable mask */
-enum
+/** Structure for a managed IRQ */
+typedef struct
 {
-	CPU_IRQ_ENABLED = 0,    /**< IRQs enabled */
-	CPU_IRQ_DISABLED = 1    /**< IRQs disabled */
-};
+	irq_handler handler;  /**< IRQ handler */
+	void *data;           /**< IRQ handler parameter */
+} irq_slot;
 
-/**
- * Set the value of the IRQ enable flag
- * \param[in] flags New value of the flag
- * \return The previous value of the IRQ enable flag
- */
-static int cpu_irq_set(int flags)
-{
-	int backup;
-
-	asm(
-	"mrs	%0, PRIMASK    \n\t"
-	"msr	PRIMASK, %1    \n\t"
-	: "=r" (backup)
-	: "r" (flags)
-	);
-
-	return backup;
-}
+/** Array of registered IRQ handlers */
+static irq_slot slots[CPU_INT_NB_IRQ];
 
 /*******************************************************************************
- * Public functions
+ * Public definitions
  ******************************************************************************/
-void cpu_irq_restore(int flags)
+int irq_register(int irq, irq_handler handler, void *data)
 {
-	cpu_irq_set(flags);
+	int flags;
+
+	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
+	{
+		return 1;
+	}
+
+	flags = cpu_irq_disable();
+
+	if(slots[irq].handler != NULL)
+	{
+		cpu_irq_restore(flags);
+		return 1;
+	}
+
+	slots[irq].handler = handler;
+	slots[irq].data = data;
+	cpu_isb();
+	cpu_irq_restore(flags);
+	return 0;
 }
 
-int cpu_irq_enable(void)
+int irq_release(int irq)
 {
-	return cpu_irq_set(CPU_IRQ_ENABLED);
+	int flags;
+
+	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
+	{
+		return 1;
+	}
+
+	flags = cpu_irq_disable();
+
+	if(slots[irq].handler == NULL)
+	{
+		cpu_irq_restore(flags);
+		return 1;
+	}
+
+	slots[irq].handler = NULL;
+	cpu_isb();
+	cpu_irq_restore(flags);
+	return 0;
 }
 
-int cpu_irq_disable(void)
+void handler_interrupt(void)
 {
-	return cpu_irq_set(CPU_IRQ_DISABLED);
-}
+	int irq;
 
-void cpu_dmb(void)
-{
-	asm("dmb \n\t");
-}
+	/* Find the IRQ number */
+	irq = (cpu_read_psr() & 0xFF) - CPU_INT_IRQ_BASE_INDEX;
 
-void cpu_dsb(void)
-{
-	asm("dsb \n\t");
-}
-
-void cpu_isb(void)
-{
-	asm("isb \n\t");
-}
-
-void cpu_wfi(void)
-{
-	asm("wfi \n\t");
+	/* Call the registered handler */
+	slots[irq].handler(slots[irq].data);
 }

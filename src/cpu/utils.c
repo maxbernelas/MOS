@@ -25,47 +25,88 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file vectors.c
+ * \file utils.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Vector table for MOS
+ * Low-level CPU-related primitives
  */
-#include <kernel/stdint.h>
-#include <kernel/stddef.h>
-#include <kernel/handlers.h>
-#include <cpu/cpu_interrupts.h>
+#include <cpu/cpu_utils.h>
 
-/** Stack base pointer (defined by linker) */
-extern uint32_t __stack_base;
-
-/** Type of a function pointer */
-typedef void (*func_ptr)(void);
-
-/** Assembly wrapper for system calls */
-extern void __svc_handler(void);
-
-/** Vector table */
-func_ptr vectors[CPU_INT_NB_VECTORS]
-__attribute__((section (".interrupt_vectors"))) =
+/*******************************************************************************
+ * Private definitions
+ ******************************************************************************/
+/** Value of the IRQ enable mask */
+enum
 {
-	(func_ptr)&__stack_base,     /* OS stack base */
-	kernel_entry,
-
-	/* System handlers */
-	handler_nmi,
-	handler_hard_fault,
-	handler_memmanage,
-	handler_busfault,
-	handler_usage,
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	__svc_handler,
-	NULL,                          /* Reserved */
-	NULL,                          /* Reserved */
-	handler_pendSV,
-	handler_systick,
-
-	/* Interrupt handlers */
-	[CPU_INT_IRQ_BASE_INDEX ... (CPU_INT_NB_VECTORS - 1)] = handler_interrupt
+	CPU_IRQ_ENABLED = 0,    /**< IRQs enabled */
+	CPU_IRQ_DISABLED = 1    /**< IRQs disabled */
 };
+
+/**
+ * Set the value of the IRQ enable flag
+ * \param[in] flags New value of the flag
+ * \return The previous value of the IRQ enable flag
+ */
+static int cpu_irq_set(int flags)
+{
+	int backup;
+
+	asm(
+	"mrs	%0, PRIMASK    \n\t"
+	"msr	PRIMASK, %1    \n\t"
+	: "=r" (backup)
+	: "r" (flags)
+	);
+
+	return backup;
+}
+
+/*******************************************************************************
+ * Public functions
+ ******************************************************************************/
+void cpu_irq_restore(int flags)
+{
+	cpu_irq_set(flags);
+}
+
+int cpu_irq_enable(void)
+{
+	return cpu_irq_set(CPU_IRQ_ENABLED);
+}
+
+int cpu_irq_disable(void)
+{
+	return cpu_irq_set(CPU_IRQ_DISABLED);
+}
+
+void cpu_dmb(void)
+{
+	asm("dmb \n\t");
+}
+
+void cpu_dsb(void)
+{
+	asm("dsb \n\t");
+}
+
+void cpu_isb(void)
+{
+	asm("isb \n\t");
+}
+
+void cpu_wfi(void)
+{
+	asm("wfi \n\t");
+}
+
+uint32_t cpu_read_psr(void)
+{
+	uint32_t reg;
+
+	asm(
+	"mrs	%0, PSR \n\t"
+	: "=r" (reg)
+	:
+	);
+
+	return reg;
+}
