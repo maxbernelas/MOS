@@ -9,21 +9,24 @@
 /**
  * Enable an interrupt
  * \param[in] irq Number of the interrupt to enable
- * \return 0 on success, 1 on failure
+ * \retval 0 Success
+ * \retval EINVAL Invalid IRQ number
  */
 int nvic_irq_enable(int irq);
 
 /**
  * Disable an interrupt
  * \param[in] irq Number of the interrupt to disable
- * \return 0 on success, 1 on failure
+ * \retval 0 Success
+ * \retval EINVAL Invalid IRQ number
  */
 int nvic_irq_disable(int irq);
 
 /**
  * Clear an interrupt pending flag
  * \param[in] irq Number of the interrupt flag to clear
- * \return 0 on success, 1 on failure
+ * \retval 0 Success
+ * \retval EINVAL Invalid IRQ number
  */
 int nvic_irq_clear(int irq);
 

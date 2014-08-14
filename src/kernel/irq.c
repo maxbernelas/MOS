@@ -34,6 +34,7 @@
 #include <cpu/cpu_utils.h>
 #include <kernel/stddef.h>
 #include <kernel/irq.h>
+#include <kernel/errno.h>
 
 /*******************************************************************************
  * Private definitions
@@ -57,7 +58,7 @@ int irq_register(int irq, irq_handler handler, void *data)
 
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
-		return 1;
+		return EINVAL;
 	}
 
 	flags = cpu_irq_disable();
@@ -65,13 +66,14 @@ int irq_register(int irq, irq_handler handler, void *data)
 	if(slots[irq].handler != NULL)
 	{
 		cpu_irq_restore(flags);
-		return 1;
+		return EBUSY;
 	}
 
 	slots[irq].handler = handler;
 	slots[irq].data = data;
 	cpu_isb();
 	cpu_irq_restore(flags);
+
 	return 0;
 }
 
@@ -81,7 +83,7 @@ int irq_release(int irq)
 
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
-		return 1;
+		return EINVAL;
 	}
 
 	flags = cpu_irq_disable();
@@ -89,12 +91,13 @@ int irq_release(int irq)
 	if(slots[irq].handler == NULL)
 	{
 		cpu_irq_restore(flags);
-		return 1;
+		return EBADF;
 	}
 
 	slots[irq].handler = NULL;
 	cpu_isb();
 	cpu_irq_restore(flags);
+
 	return 0;
 }
 

@@ -32,6 +32,7 @@
 #include <kernel/stdint.h>
 #include <cpu/cpu_interrupts.h>
 #include <cpu/cpu_mapping.h>
+#include <kernel/errno.h>
 
 /*******************************************************************************
  * Private definitions
@@ -57,7 +58,7 @@ int nvic_irq_enable(int irq)
 {
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
-		return 1;
+		return EINVAL;
 	}
 
 	regs->iser[irq / 32] = (1U << (irq % 32));
@@ -69,7 +70,7 @@ int nvic_irq_disable(int irq)
 {
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
-		return 1;
+		return EINVAL;
 	}
 
 	regs->icer[irq / 32] = (1U << (irq % 32));
@@ -81,7 +82,7 @@ int nvic_irq_clear(int irq)
 {
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
-		return 1;
+		return EINVAL;
 	}
 
 	regs->ispr[irq / 32] = (1U << (irq % 32));
