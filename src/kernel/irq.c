@@ -30,7 +30,6 @@
  * IRQ handlers management
  */
 #include <cpu/cpu_interrupts.h>
-#include <kernel/handlers.h>
 #include <cpu/cpu_utils.h>
 #include <kernel/stddef.h>
 #include <kernel/irq.h>
@@ -54,49 +53,40 @@ static irq_slot slots[CPU_INT_NB_IRQ];
  ******************************************************************************/
 int irq_register(int irq, irq_handler handler, void *data)
 {
-	int flags;
 
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
 		return EINVAL;
 	}
 
-	flags = cpu_irq_disable();
 
 	if(slots[irq].handler != NULL)
 	{
-		cpu_irq_restore(flags);
 		return EBUSY;
 	}
 
 	slots[irq].handler = handler;
 	slots[irq].data = data;
-	cpu_isb();
-	cpu_irq_restore(flags);
+	cpu_dsb();
 
 	return 0;
 }
 
 int irq_release(int irq)
 {
-	int flags;
 
 	if((irq < 0) || (irq > CPU_INT_NB_IRQ - 1))
 	{
 		return EINVAL;
 	}
 
-	flags = cpu_irq_disable();
-
 	if(slots[irq].handler == NULL)
 	{
-		cpu_irq_restore(flags);
 		return EBADF;
 	}
 
 	slots[irq].handler = NULL;
-	cpu_isb();
-	cpu_irq_restore(flags);
+	cpu_dsb();
 
 	return 0;
 }

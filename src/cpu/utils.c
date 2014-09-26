@@ -50,7 +50,7 @@ static int cpu_irq_set(int flags)
 {
 	int backup;
 
-	asm(
+	asm volatile(
 	"mrs	%0, PRIMASK    \n\t"
 	"msr	PRIMASK, %1    \n\t"
 	: "=r" (backup)
@@ -80,29 +80,29 @@ int cpu_irq_disable(void)
 
 void cpu_dmb(void)
 {
-	asm("dmb \n\t");
+	asm volatile("dmb \n\t");
 }
 
 void cpu_dsb(void)
 {
-	asm("dsb \n\t");
+	asm volatile("dsb \n\t");
 }
 
 void cpu_isb(void)
 {
-	asm("isb \n\t");
+	asm volatile("isb \n\t");
 }
 
 void cpu_wfi(void)
 {
-	asm("wfi \n\t");
+	asm volatile("wfi \n\t");
 }
 
 uint32_t cpu_read_psr(void)
 {
 	uint32_t reg;
 
-	asm(
+	asm volatile(
 	"mrs	%0, PSR \n\t"
 	: "=r" (reg)
 	:
