@@ -55,7 +55,8 @@ typedef struct
 	uint32_t bfar;       /**< Bus fault address register */
 } scb_regs;
 
-volatile scb_regs *scb = (volatile scb_regs *)CPU_SCB_BASE;
+/** Pointer used to access the SCB */
+static volatile scb_regs *scb = (volatile scb_regs *)CPU_SCB_BASE;
 
 /*******************************************************************************
  * Public functions

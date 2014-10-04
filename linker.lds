@@ -29,13 +29,12 @@ SECTIONS
         __rodata_end = .;
     } > rom
 
+    . = ALIGN(4);
     .data : AT (__rodata_end)
     {
-        . = ALIGN(4);
         __ram_data_start = .;
         *(.data*)
         __ram_data_end = .;
-        __data_size = __ram_data_end - __ram_data_start;
     } > ram
 
     .bss :
@@ -45,7 +44,6 @@ SECTIONS
         *(.bss*)
         *(COMMON)
         __bss_end = .;
-        __bss_size = __bss_end - __bss_start;
     } > ram
 
     /* Nothing is put in this section, but it reserves space so that we get an

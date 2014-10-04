@@ -25,61 +25,36 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file handlers.c
+ * \file string.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Exception handlers implementation
+ * String management functions
  */
-#include <kernel/handlers.h>
+#include <kernel/string.h>
+#include <kernel/stddef.h>
 
-void handler_nmi(void)
+void *memcpy(void *dest, const void *src, size_t n)
 {
-	while(1)
-		;
+	unsigned char *d = dest;
+	const unsigned char *s = src;
+
+	while(n)
+	{
+		*d++ = *s++;
+		n--;
+	}
+
+	return dest;
 }
 
-void handler_hard_fault(void)
+void *memset(void *dest, int val, size_t n)
 {
-	while(1)
-		;
-}
+	unsigned char *d = dest;
 
-void handler_memmanage(void)
-{
-	while(1)
-		;
-}
+	while(n)
+	{
+		*d++ = val;
+		n--;
+	}
 
-void handler_busfault(void)
-{
-	while(1)
-		;
-}
-
-void handler_usage(void)
-{
-	while(1)
-		;
-}
-
-int handler_svc(uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4,
-                uint32_t num)
-{
-	(void)num;
-	(void)p1;
-	(void)p2;
-	(void)p3;
-	(void)p4;
-
-	return 0;
-}
-
-void handler_pendSV(void)
-{
-	while(1)
-		;
-}
-
-void handler_systick(void)
-{
-	;
+	return dest;
 }

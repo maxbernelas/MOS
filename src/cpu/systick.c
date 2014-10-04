@@ -25,61 +25,80 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file handlers.c
+ * \file systick.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Exception handlers implementation
+ * SysTick driver implementation
  */
-#include <kernel/handlers.h>
+#include <kernel/errno.h>
+#include <kernel/stdint.h>
+#include <cpu/cpu_mapping.h>
 
-void handler_nmi(void)
+/*******************************************************************************
+ * Private definitions
+ ******************************************************************************/
+/** SysTick register map */
+typedef struct
 {
-	while(1)
-		;
-}
+	uint32_t ctrl;      /**< Control register */
+	uint32_t load;      /**< Reload value register */
+	uint32_t val;       /**< Current value register */
+	uint32_t calib;     /**< Calibration value register */
+} systick_regs;
 
-void handler_hard_fault(void)
-{
-	while(1)
-		;
-}
+/** Pointer used to acces the SysTick */
+static volatile systick_regs *systick = (volatile systick_regs *)CPU_SYSTMR_BASE;
 
-void handler_memmanage(void)
-{
-	while(1)
-		;
-}
+/** Configured SysTick frequency */
+static unsigned int systick_freq;
 
-void handler_busfault(void)
+/*******************************************************************************
+ * Public functions
+ ******************************************************************************/
+int systick_setup(unsigned int freq, unsigned int ahb_freq)
 {
-	while(1)
-		;
-}
+	uint32_t load;
 
-void handler_usage(void)
-{
-	while(1)
-		;
-}
+	/* Setup clocksource and reload value */
+	systick->ctrl = (1UL << 2);
+	load = ahb_freq / freq;
+	systick_freq = ahb_freq / load;
 
-int handler_svc(uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4,
-                uint32_t num)
-{
-	(void)num;
-	(void)p1;
-	(void)p2;
-	(void)p3;
-	(void)p4;
+	if(load > (1UL << 24))
+	{
+		/* Switch to AHB / 8 */
+		systick->ctrl = 0;
+		load = load / 8;
+		systick_freq = (ahb_freq / 8) / load;
+	}
+
+	if(load < 2)
+	{
+		systick_freq = 0;
+		return EINVAL;
+	}
+
+	systick->load = load - 1;
 
 	return 0;
 }
 
-void handler_pendSV(void)
+int systick_enable(void)
 {
-	while(1)
-		;
+	/* Enable interrupt and start timer */
+	systick->ctrl |= (3UL);
+
+	return 0;
 }
 
-void handler_systick(void)
+int systick_disable(void)
 {
-	;
+	/* Stop timer and disable interrupt */
+	systick->ctrl &= ~(3UL);
+
+	return 0;
+}
+
+unsigned int systick_get_freq(void)
+{
+	return systick_freq;
 }

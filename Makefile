@@ -18,6 +18,7 @@ CROSS := arm-none-eabi-
 CC := $(CROSS)gcc
 LD := $(CROSS)ld
 AS := $(CROSS)as
+GDB := $(CROSS)gdb
 OBJCOPY := $(CROSS)objcopy
 OBJ :=
 
@@ -39,3 +40,6 @@ $(OUT).elf: $(OBJ)
 # Cleanup target, remove generated object files and binaries
 clean:
 	rm -f $(OBJ) $(OUT).bin $(OUT).elf
+
+debug: $(OUT).elf $(OUT).bin
+	$(GDB) $<

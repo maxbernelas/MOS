@@ -29,9 +29,23 @@
  * \author Maxime Bernelas <maxime@bernelas.fr>
  * Kernel entry point
  */
+#include <cpu/cpu_systick.h>
+#include <kernel/string.h>
+#include <kernel/stdint.h>
+
+/* Linker-defined section symbols */
+extern uint32_t __ram_data_start, __ram_data_end, __rodata_end, __bss_start,
+                __bss_end;
 
 void kernel_entry(void)
 {
+	/* Initialize data segment */
+	memcpy(&__ram_data_start, &__rodata_end,
+	       (unsigned char *)(&__ram_data_end) - (unsigned char *)(&__ram_data_start));
+	/* Initialize BSS */
+	memset(&__bss_start, 0x00,
+	       (unsigned char *)(&__bss_end) - (unsigned char *)(&__bss_start));
+
 	while(1)
 		;
 }
