@@ -11,7 +11,7 @@
  * \param[in] freq Desired timer interrupt frequency
  * \param[in] ahb_freq AHB frequency
  * \retval 0 Success
- * \retval EINVAL Unable to set the required frequency
+ * \retval #EINVAL Unable to set the required frequency
  */
 int systick_setup(unsigned int freq, unsigned int ahb_freq);
 
