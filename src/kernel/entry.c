@@ -32,6 +32,7 @@
 #include <cpu/cpu_systick.h>
 #include <kernel/string.h>
 #include <kernel/stdint.h>
+#include <kernel/kalloc.h>
 
 /* Linker-defined section symbols */
 extern uint32_t __ram_data_start, __ram_data_end, __rodata_end, __bss_start,
@@ -45,6 +46,9 @@ void kernel_entry(void)
 	/* Initialize BSS */
 	memset(&__bss_start, 0x00,
 	       (unsigned char *)(&__bss_end) - (unsigned char *)(&__bss_start));
+
+	/* Initialise memory allocator */
+	kalloc_init();
 
 	while(1)
 		;
