@@ -41,6 +41,9 @@ extern uint32_t __stack_limit, __bss_end;
 /*******************************************************************************
  * Private definitions
  ******************************************************************************/
+/** Allocated blocks alignment in bytes */
+#define KALLOC_ALIGN (sizeof(int))
+
 /** Block states */
 typedef enum
 {
@@ -190,6 +193,9 @@ void * kmalloc(size_t n)
 	{
 		return NULL;
 	}
+
+	/* Round the size to keep blocks aligned */
+	n = ((KALLOC_ALIGN * n) + (KALLOC_ALIGN - 1)) / KALLOC_ALIGN;
 
 	/* Find the best fitting free block */
 	cur_node = &(first_block->node);

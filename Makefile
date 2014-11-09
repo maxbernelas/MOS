@@ -20,6 +20,7 @@ LD := $(CROSS)ld
 AS := $(CROSS)as
 GDB := $(CROSS)gdb
 OBJCOPY := $(CROSS)objcopy
+SIZE := $(CROSS)size
 OBJ :=
 
 # Include all subdirectries makefiles, they will add their object files to the
@@ -32,6 +33,7 @@ all: $(OUT).bin
 # Flat binary output
 $(OUT).bin: $(OUT).elf
 	$(OBJCOPY) -O binary $< $@
+	$(SIZE) $<
 
 # ELF binary output
 $(OUT).elf: $(OBJ)
