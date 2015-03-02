@@ -55,6 +55,69 @@ typedef struct
 	uint32_t bfar;       /**< Bus fault address register */
 } scb_regs;
 
+/** Set PendSV interrupt bit */
+#define SCB_PENDSVSET (1U << 28)
+
+/** Clear PendSV interrupt bit */
+#define SCB_PENDSVCLR (1U << 27)
+
+/** Clear Systick interrupt bit */
+#define SCB_PENDSTCLR (1U << 25)
+
+/** Reset request bit */
+#define SCB_SYSRESETREQ (1U << 2)
+
+/** Deep sleep request bit */
+#define SCB_SLEEPDEEP (1U << 2)
+
+/** Trap on division by 0 bit */
+#define SCB_DIV_0_TRP (1U << 4)
+
+/** Instruction access violation bit */
+#define SCB_IACCVIOL (1U)
+
+/** Data access violation bit */
+#define SCB_DACCVIOL (1U << 1)
+
+/** Memory fault on unstacking bit */
+#define SCB_MUNSTKERR (1U << 3)
+
+/** Memory fault on stacking error */
+#define SCB_MSTKERR (1U << 4)
+
+/** MMAR valid bit */
+#define SCB_MMARVALID (1U << 7)
+
+/** Instruction bus error bit */
+#define SCB_IBUSERR (1U << 8)
+
+/** Bus fault on unstacking bit */
+#define SCB_UNSTKERR (1U << 11)
+
+/** Bus fault on stacking bit */
+#define SCB_STKERR (1U << 12)
+
+/** BFAR valid bit */
+#define SCB_BFARVALID (1U << 15)
+
+/** Undefined instruction fault bit */
+#define SCB_UNDEFINSTR (1U << 16)
+
+/** Invalid state fault bit */
+#define SCB_INVSTATE (1U << 17)
+
+/** Invalid PC load fault bit */
+#define SCB_INVPC (1U << 18)
+
+/** No coprocessor fault bit */
+#define SCB_NOCP (1U << 19)
+
+/** Unaligned access fault bit */
+#define SCB_UNALIGNED (1U << 24)
+
+/** Division by zero fault bit */
+#define SCB_DIVBYZERO (1U << 25)
+
 /** Pointer used to access the SCB */
 static volatile scb_regs *scb = (volatile scb_regs *)CPU_SCB_BASE;
 
@@ -73,28 +136,28 @@ int scb_get_cpuid(cpuid_t *cpuid)
 
 int scb_set_pendSV(void)
 {
-	scb->icsr |= (1UL << 28);
+	scb->icsr |= SCB_PENDSVSET;
 
 	return 0;
 }
 
 int scb_clear_pendSV(void)
 {
-	scb->icsr |= (1UL << 27);
+	scb->icsr |= SCB_PENDSVCLR;
 
 	return 0;
 }
 
 int scb_clear_systick(void)
 {
-	scb->icsr |= (1UL << 25);
+	scb->icsr |= SCB_PENDSTCLR;
 
 	return 0;
 }
 
 int scb_request_reset(void)
 {
-	scb->aircr |= (1UL << 2);
+	scb->aircr |= SCB_SYSRESETREQ;
 
 	return 0;
 }
@@ -103,11 +166,11 @@ int scb_set_deep_sleep(int status)
 {
 	if(status)
 	{
-		scb->scr |= (1UL << 1);
+		scb->scr |= SCB_SLEEPDEEP;
 	}
 	else
 	{
-		scb->scr &= ~(1UL << 1);
+		scb->scr &= ~(SCB_SLEEPDEEP);
 	}
 
 	return 0;
@@ -117,11 +180,11 @@ int scb_set_trap_on_div_by_zero(int status)
 {
 	if(status)
 	{
-		scb->ccr |= (1UL << 4);
+		scb->ccr |= SCB_DIV_0_TRP;
 	}
 	else
 	{
-		scb->ccr &= ~(1UL << 4);
+		scb->ccr &= ~(SCB_DIV_0_TRP);
 	}
 
 	return 0;
@@ -134,27 +197,27 @@ int scb_get_usage_fault_information(void *stacked_pc, fault_info_t *info)
 	info->address = NULL;
 
 	/* Try to determine the cause of the fault */
-	if(scb->cfsr & (1UL << 25))
+	if(scb->cfsr & SCB_DIVBYZERO)
 	{
 		info->cause = FAULT_CAUSE_UF_DIV_BY_ZERO;
 	}
-	else if(scb->cfsr & (1UL << 24))
+	else if(scb->cfsr & SCB_UNALIGNED)
 	{
 		info->cause = FAULT_CAUSE_UF_ACCESS;
 	}
-	else if(scb->cfsr & (1UL << 19))
+	else if(scb->cfsr & SCB_NOCP)
 	{
 		info->cause = FAULT_CAUSE_UF_NOCP;
 	}
-	else if(scb->cfsr & (1UL << 18))
+	else if(scb->cfsr & SCB_INVPC)
 	{
 		info->cause = FAULT_CAUSE_UF_INVALID_PC;
 	}
-	else if(scb->cfsr & (1UL << 17))
+	else if(scb->cfsr & SCB_INVSTATE)
 	{
 		info->cause = FAULT_CAUSE_UF_INVALID_STATE;
 	}
-	else if(scb->cfsr & (1UL << 16))
+	else if(scb->cfsr & SCB_UNDEFINSTR)
 	{
 		info->cause = FAULT_CAUSE_UF_UNDEF_INSTR;
 	}
@@ -166,7 +229,7 @@ int scb_get_bus_fault_information(void *stacked_pc, fault_info_t *info)
 {
 	info->cause = FAULT_CAUSE_UNKKNOW;
 
-	if(scb->cfsr & (1UL << 15))
+	if(scb->cfsr & SCB_BFARVALID)
 	{
 		info->address = (void *)scb->bfar;
 	}
@@ -176,17 +239,17 @@ int scb_get_bus_fault_information(void *stacked_pc, fault_info_t *info)
 	}
 
 	/* Try to determine the cause of the fault */
-	if(scb->cfsr & (1UL << 12))
+	if(scb->cfsr & SCB_STKERR)
 	{
 		info->cause = FAULT_CAUSE_BF_STACKING_ERROR;
 		info->instruction = NULL;
 	}
-	else if(scb->cfsr & (1UL << 11))
+	else if(scb->cfsr & SCB_UNSTKERR)
 	{
 		info->cause = FAULT_CAUSE_BF_UNSTACKING_ERROR;
 		info->instruction = NULL;
 	}
-	else if(scb->cfsr & (1UL << 8))
+	else if(scb->cfsr & SCB_IBUSERR)
 	{
 		info->cause = FAULT_CAUSE_BF_IBUSERR;
 		info->instruction = stacked_pc;
@@ -199,7 +262,7 @@ int scb_get_mem_manage_fault_information(void *stacked_pc, fault_info_t *info)
 {
 	info->cause = FAULT_CAUSE_UNKKNOW;
 
-	if(scb->cfsr & (1UL << 7))
+	if(scb->cfsr & SCB_MMARVALID)
 	{
 		info->address = (void *)scb->mmfar;
 	}
@@ -209,22 +272,22 @@ int scb_get_mem_manage_fault_information(void *stacked_pc, fault_info_t *info)
 	}
 
 	/* Try to determine the cause of the fault */
-	if(scb->cfsr & (1UL << 4))
+	if(scb->cfsr & SCB_MSTKERR)
 	{
 		info->cause = FAULT_CAUSE_MM_STACKING_ERROR;
 		info->instruction = NULL;
 	}
-	else if(scb->cfsr & (1UL << 3))
+	else if(scb->cfsr & SCB_MUNSTKERR)
 	{
 		info->cause = FAULT_CAUSE_MM_UNSTACKING_ERROR;
 		info->instruction = NULL;
 	}
-	else if(scb->cfsr & (1UL << 1))
+	else if(scb->cfsr & SCB_DACCVIOL)
 	{
 		info->cause = FAULT_CAUSE_MM_DATA_ACCESS;
 		info->instruction = stacked_pc;
 	}
-	else if(scb->cfsr & (1UL))
+	else if(scb->cfsr & SCB_IACCVIOL)
 	{
 		info->cause = FAULT_CAUSE_MM_INSTR_ACCESS;
 		info->instruction = stacked_pc;

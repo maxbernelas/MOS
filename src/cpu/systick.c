@@ -45,6 +45,21 @@ typedef struct
 	uint32_t calib;     /**< Calibration value register */
 } systick_regs;
 
+/** Use AHB as a clock source */
+#define SYSTICK_CLKSRC_AHB (1U << 2)
+
+/** Use AHB / 8 as a clock source */
+#define SYSTICK_CLKSRC_AHB_DIV_8 (0U)
+
+/** Maximum Systick period when running on AHB clock */
+#define SYSTICK_MAX_PERIOD_AHB (1U << 24)
+
+/** Systick enable flag */
+#define SYSTICK_ENABLE (1U)
+
+/** Systick IRQ enable flag */
+#define SYSTICK_IRQ_ENABLE (1U << 1)
+
 /** Pointer used to acces the SysTick */
 static volatile systick_regs *systick = (volatile systick_regs *)CPU_SYSTMR_BASE;
 
@@ -59,14 +74,14 @@ int systick_setup(unsigned int freq, unsigned int ahb_freq)
 	uint32_t load;
 
 	/* Setup clocksource and reload value */
-	systick->ctrl = (1UL << 2);
+	systick->ctrl = SYSTICK_CLKSRC_AHB;
 	load = ahb_freq / freq;
 	systick_freq = ahb_freq / load;
 
-	if(load > (1UL << 24))
+	if(load > SYSTICK_MAX_PERIOD_AHB)
 	{
 		/* Switch to AHB / 8 */
-		systick->ctrl = 0;
+		systick->ctrl = SYSTICK_CLKSRC_AHB_DIV_8;
 		load = load / 8;
 		systick_freq = (ahb_freq / 8) / load;
 	}
@@ -85,7 +100,7 @@ int systick_setup(unsigned int freq, unsigned int ahb_freq)
 int systick_enable(void)
 {
 	/* Enable interrupt and start timer */
-	systick->ctrl |= (3UL);
+	systick->ctrl |= (SYSTICK_ENABLE | SYSTICK_IRQ_ENABLE);
 
 	return 0;
 }
@@ -93,7 +108,7 @@ int systick_enable(void)
 int systick_disable(void)
 {
 	/* Stop timer and disable interrupt */
-	systick->ctrl &= ~(3UL);
+	systick->ctrl &= ~(SYSTICK_ENABLE | SYSTICK_IRQ_ENABLE);
 
 	return 0;
 }
