@@ -12,19 +12,22 @@
 void kernel_entry(void);
 
 /** NMI handler */
-void handler_nmi(void);
+void handler_nmi(void) __attribute__((naked));
 
 /** Hard fault handler */
-void handler_hard_fault(void);
+void handler_hard_fault(void) __attribute__((naked));
 
 /** Memory management fault handler */
-void handler_memmanage(void);
+void handler_memmanage(void) __attribute__((naked));
 
 /** Bus fault handler */
-void handler_busfault(void);
+void handler_busfault(void) __attribute__((naked));
 
 /** Usage fault handler */
-void handler_usage(void);
+void handler_usage(void) __attribute__((naked));
+
+/** PendSV handler */
+void handler_pendSV(void) __attribute__((naked));
 
 /**
  * Supervisor call handler
@@ -37,9 +40,6 @@ void handler_usage(void);
  */
 int handler_svc(uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4,
                 uint32_t num);
-
-/** PendSV handler */
-void handler_pendSV(void);
 
 /** Systick handler */
 void handler_systick(void);

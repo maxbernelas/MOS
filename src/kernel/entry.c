@@ -30,16 +30,26 @@
  * Kernel entry point
  */
 #include <cpu/cpu_systick.h>
+#include <cpu/cpu_utils.h>
 #include <kernel/string.h>
 #include <kernel/stdint.h>
 #include <kernel/kalloc.h>
+#include <kernel/sched.h>
 
 /* Linker-defined section symbols */
 extern uint32_t __ram_data_start, __ram_data_end, __rodata_end, __bss_start,
                 __bss_end;
 
+/*
+ * Dummy stack to save main task context on first context switch, even though it
+ * will never be restored
+ */
+static uint32_t dummy_stack[16];
+
 void kernel_entry(void)
 {
+	unsigned char *sp;
+
 	/* Initialize data segment */
 	memcpy(&__ram_data_start, &__rodata_end,
 	       (unsigned char *)(&__ram_data_end) - (unsigned char *)(&__ram_data_start));
@@ -49,6 +59,15 @@ void kernel_entry(void)
 
 	/* Initialise memory allocator */
 	kalloc_init();
+
+	/* Initialize scheduler */
+	sched_init();
+	sp = ((unsigned char *)dummy_stack) + sizeof(dummy_stack);
+	CPU_SET_PSP(sp);
+
+	/* Setup SysTick to start scheduling */
+	systick_setup(100, 8000000);
+	systick_enable();
 
 	while(1)
 		;

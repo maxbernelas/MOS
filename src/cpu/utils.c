@@ -41,6 +41,10 @@ enum
 	CPU_IRQ_DISABLED = 1    /**< IRQs disabled */
 };
 
+/* CONTROL register fields */
+/** Unprivileged thread mode bit */
+#define CPU_CTRL_REG_UNPRIV_BIT (1UL)
+
 /**
  * Set the value of the IRQ enable flag
  * \param[in] flags New value of the flag
@@ -58,6 +62,38 @@ static int cpu_irq_set(int flags)
 	);
 
 	return backup;
+}
+
+/**
+ * Get CONTROL register value
+ * \return Value of the CONTROL register
+ */
+static uint32_t get_ctrl_reg(void)
+{
+	uint32_t val;
+
+	asm volatile(
+	"mrs %0, control \n\t"
+	: "=r" (val)
+	:
+	:
+	);
+
+	return val;
+}
+
+/**
+ * Set CONTROL register value
+ * \param[in] val New value of the CONTROL register
+ */
+static void set_ctrl_reg(uint32_t val)
+{
+	asm volatile(
+	"msr control, %0 \n\t"
+	:
+	: "r" (val)
+	:
+	);
 }
 
 /*******************************************************************************
@@ -109,4 +145,13 @@ uint32_t cpu_read_psr(void)
 	);
 
 	return reg;
+}
+
+void cpu_drop_privilege(void)
+{
+	uint32_t val;
+
+	val = get_ctrl_reg();
+	val |= CPU_CTRL_REG_UNPRIV_BIT;
+	set_ctrl_reg(val);
 }

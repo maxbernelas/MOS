@@ -25,103 +25,77 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 /**
- * \file handlers.c
+ * \file task.c
  * \author Maxime Bernelas <maxime@bernelas.fr>
- * Exception handlers implementation
+ * CPU-specific task handling routines
  */
-#include <cpu/cpu_utils.h>
+#include <kernel/stdint.h>
 #include <cpu/cpu_task.h>
-#include <kernel/handlers.h>
-#include <kernel/sched.h>
+#include <cpu/cpu_utils.h>
+#include <kernel/string.h>
 
 /*******************************************************************************
  * Private definitions
  ******************************************************************************/
-/**
- * Save stack pointer on fault entry and call a function with this stack pointer
- * as parameter
- * \param[in] func The function to call
- */ 
-#define CALL_WITH_STACK_POINTER(func)                                          \
-	asm volatile(                                                          \
-		"tst	lr, #4 \n\t"                                           \
-		"ite	eq \n\t"                                               \
-		"mrseq	r0, msp \n\t"                                          \
-		"mrsne	r0, psp \n\t"                                          \
-		"push { lr } \n\t"                                             \
-		"bl " #func " \n\t"                                            \
-		"mov pc, lr \n\t"                                              \
-	)
-
-/**
- * Dummy fault handler
- * \param[in] sp Value of the stack pointer on fault entry
- */
-static void dummy_handler(void *sp) __attribute__((unused));
-static void dummy_handler(void *sp)
+/** Saved task context */
+typedef struct
 {
-	cpu_ex_stack_frame *frame;
-
-	frame = sp;
-
-	(void)frame;
-	while(1)
-		;
-}
+	uint32_t r4;    /**< Saved R4 */
+	uint32_t r5;    /**< Saved R5 */
+	uint32_t r6;    /**< Saved R6 */
+	uint32_t r7;    /**< Saved R7 */
+	uint32_t r8;    /**< Saved R8 */
+	uint32_t r9;    /**< Saved R9 */
+	uint32_t r10;   /**< Saved R10 */
+	uint32_t r11;   /**< Saved R11 */
+} task_context;
 
 /*******************************************************************************
  * Public functions
  ******************************************************************************/
-
-void handler_nmi(void)
+void * cpu_task_create_context(void *sp, void *func, void *arg, void *stop_func)
 {
-	CALL_WITH_STACK_POINTER(dummy_handler);
+	cpu_ex_stack_frame *ex_frame;
+	char *csp;
+
+	csp = sp;
+
+	/* Create the exception stack frame */
+	csp -= sizeof(cpu_ex_stack_frame);
+	ex_frame = (cpu_ex_stack_frame *)csp;
+	ex_frame->r0 = (uint32_t)arg;
+	ex_frame->r1 = 0;
+	ex_frame->r2 = 0;
+	ex_frame->r3 = 0;
+	ex_frame->r12 = 0;
+	ex_frame->lr = (uint32_t)stop_func;
+	ex_frame->pc = (uint32_t)func;
+	ex_frame->psr = 0x21000000; /* Thumb mode, no carry in status flags */
+
+	/* All other registers set to 0 in task context */
+	csp -= sizeof(task_context);
+	memset(csp, 0x00, sizeof(task_context));
+
+	return csp;
 }
 
-void handler_hard_fault(void)
+void cpu_task_save_context(void)
 {
-	CALL_WITH_STACK_POINTER(dummy_handler);
+	asm volatile(
+	"mrs	r0, psp       \n\t"
+	"stmdb	r0!, {r4-r11} \n\t"
+	"msr	psp, r0       \n\t"
+	:
+	:
+	: "r0"
+	);
 }
 
-void handler_memmanage(void)
+void cpu_task_restore_context(void)
 {
-	CALL_WITH_STACK_POINTER(dummy_handler);
-}
-
-void handler_busfault(void)
-{
-	CALL_WITH_STACK_POINTER(dummy_handler);
-}
-
-void handler_usage(void)
-{
-	CALL_WITH_STACK_POINTER(dummy_handler);
-}
-
-int handler_svc(uint32_t p1, uint32_t p2, uint32_t p3, uint32_t p4,
-                uint32_t num)
-{
-	(void)num;
-	(void)p1;
-	(void)p2;
-	(void)p3;
-	(void)p4;
-
-	return 0;
-}
-
-void handler_pendSV(void)
-{
-	cpu_task_save_context();
-
-	schedule();
-
-	cpu_task_restore_context();
-	CPU_RET_TO_USER();
-}
-
-void handler_systick(void)
-{
-	/* Release processor to next task */
-	sched_yield();
+	asm volatile(
+	"mrs	r0, psp       \n\t"
+	"ldmia	r0!, {r4-r11} \n\t"
+	"msr	psp, r0       \n\t"
+	);
 }

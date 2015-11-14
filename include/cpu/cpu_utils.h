@@ -44,4 +44,78 @@ void cpu_wfi(void);
  */
 uint32_t cpu_read_psr(void);
 
+/**
+ * Switch to unprivileged thread mode
+ */
+void cpu_drop_privilege(void);
+
+/**
+ * Get the value of the MSP
+ * \return Current value of the main stack pointer
+ */
+#define CPU_GET_MSP()                                                          \
+	({                                                                     \
+		void *_sp;                                                     \
+		asm volatile(                                                  \
+		    "mrs	%0, msp \n\t"                                  \
+		    : "=r" (_sp)                                               \
+		);                                                             \
+		_sp;                                                           \
+	})
+
+/**
+ * Get the value of the PSP
+ * \return Current value of the process stack pointer
+ */
+#define CPU_GET_PSP()                                                          \
+	({                                                                     \
+		void *_sp;                                                     \
+		asm volatile(                                                  \
+		    "mrs	%0, psp \n\t"                                  \
+		    : "=r" (_sp)                                               \
+		);                                                             \
+		_sp;                                                           \
+	})
+
+/**
+ * Set the value of the PSP
+ * \param[in] sp New value of the process stack pointer
+ */
+#define CPU_SET_PSP(sp)                                                        \
+	do{                                                                    \
+		asm volatile(                                                  \
+		    "msr	psp, %0 \n\t"                                  \
+		    "dsb                \n\t"                                  \
+		    :                                                          \
+		    : "r" (sp)                                                 \
+		);                                                             \
+	} while(0)
+
+/**
+ * Set the value of the MSP
+ * \param[in] sp New value of the main stack pointer
+ */
+#define CPU_SET_MSP(sp)                                                        \
+	do{                                                                    \
+		asm volatile(                                                  \
+		    "msr	msp, %0 \n\t"                                  \
+		    "dsb                \n\t"                                  \
+		    :                                                          \
+		    : "r" (sp)                                                 \
+		);                                                             \
+	} while(0)
+
+/** Structure representing the frame stacked by hardware on exception entry */
+typedef struct
+{
+	uint32_t r0;               /**< stacked R0 */
+	uint32_t r1;               /**< Stacked R1 */
+	uint32_t r2;               /**< Stacked R2 */
+	uint32_t r3;               /**< Stacked R3 */
+	uint32_t r12;              /**< Stacked R12 */
+	uint32_t lr;               /**< Stacked LR */
+	uint32_t pc;               /**< Stacked PC */
+	uint32_t psr;              /**< Stacked PSR */
+} cpu_ex_stack_frame;
+
 #endif

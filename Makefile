@@ -8,7 +8,8 @@ MODULES := src/cpu src/kernel
 OUT := mos
 
 # Build options
-CFLAGS := -Iinclude -Wall -Wextra -Werror -mcpu=cortex-m3 -nostdinc -mthumb -ggdb
+CFLAGS := -Iinclude -Wall -Wextra -Werror -mcpu=cortex-m3 -nostdinc -mthumb    \
+	  -ggdb -fomit-frame-pointer
 LDFLAGS := -nostdlib
 CROSS := arm-none-eabi-
 
