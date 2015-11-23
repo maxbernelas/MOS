@@ -97,5 +97,8 @@ void cpu_task_restore_context(void)
 	"mrs	r0, psp       \n\t"
 	"ldmia	r0!, {r4-r11} \n\t"
 	"msr	psp, r0       \n\t"
+	:
+	:
+	: "r0"
 	);
 }

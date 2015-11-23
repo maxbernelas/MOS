@@ -9,7 +9,7 @@ OUT := mos
 
 # Build options
 CFLAGS := -Iinclude -Wall -Wextra -Werror -mcpu=cortex-m3 -nostdinc -mthumb    \
-	  -ggdb -fomit-frame-pointer
+	  -ggdb -fomit-frame-pointer -DDEBUG
 LDFLAGS := -nostdlib
 CROSS := arm-none-eabi-
 

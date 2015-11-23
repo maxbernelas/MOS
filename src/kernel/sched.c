@@ -51,10 +51,11 @@ typedef enum
 /** Task structure */
 struct _task
 {
-	void *sp;            /**< Stack pointer */
-	task_state state;    /**< State */
-	list_item list;      /**< Task list item */
-	unsigned char priv;  /**< True if task is privileged */
+	void *sp;             /**< Stack pointer */
+	task_state state;     /**< State */
+	list_item list;       /**< Task list item */
+	unsigned char priv;   /**< True if task is privileged */
+	unsigned char pad[3]; /**< Padding bytes (will be used as canary) */
 };
 
 /** List of tasks */
@@ -62,6 +63,9 @@ static list_item *task_list = NULL;
 
 /** Current task pointer */
 static task_t *current_task = NULL;
+
+/** Idle task pointer */
+static task_t *idle_task = NULL;
 
 /*******************************************************************************
  * Private functions
@@ -75,8 +79,16 @@ static task_t * sched_elect(void)
 	list_item *tmp;
 	task_t *t;
 
-	/* Elect next ready task in the list (round-robin scheduling) */
-	tmp = current_task ? current_task->list.next : NULL;
+	/* No current task, elect idle task */
+	if(current_task == NULL)
+		return idle_task;
+
+	/* Place current task at the end of the list */
+	list_remove(&task_list, &current_task->list);
+	list_add_tail(&task_list, &current_task->list);
+
+	/* Elect first ready task in the list (round-robin scheduling) */
+	tmp = task_list;
 	while(tmp)
 	{
 		t = LIST_GET_OBJECT(tmp, task_t, list);
@@ -89,8 +101,8 @@ static task_t * sched_elect(void)
 		tmp = tmp->next;
 	}
 
-	/* No ready task found, elect idle task (first in the task list) */
-	return LIST_GET_OBJECT(task_list, task_t, list);
+	/* No task ready, elect idle task */
+	return idle_task;
 }
 
 /** Task termination routine */
@@ -106,13 +118,15 @@ static void task_exit(void)
 }
 
 /** CPU idle task (task 0) */
-static void idle_task(void *arg)
+static void idle(void *arg)
 {
 	(void)arg;
 
 	while(1)
 	{
+#ifndef DEBUG
 		cpu_wfi();
+#endif
 	}
 }
 
@@ -139,6 +153,13 @@ task_t *sched_create_task(void (*f)(void *), void *arg, size_t stack_size,
 	t->list.next = NULL;
 	t->list.prev = NULL;
 
+#ifdef DEBUG
+	/* Setup canary to help spot stack overflow in task */
+	t->pad[0] = 0xA5;
+	t->pad[1] = 0xA5;
+	t->pad[2] = 0xA5;
+#endif
+
 	/* Create task context */
 	t->sp = cpu_task_create_context(t->sp, (void *)f, arg, task_exit);
 
@@ -163,12 +184,13 @@ void sched_yield(void)
 
 int sched_init(void)
 {
-	task_t *idle;
-
 	/* Create idle task */
-	idle = sched_create_task(idle_task, NULL, 256, 0);
-	if(idle == NULL)
+	idle_task = sched_create_task(idle, NULL, 128, 0);
+	if(idle_task == NULL)
 		return 1;
+
+	/* Remove idle task from task list */
+	list_remove(&task_list, &idle_task->list);
 
 	return 0;
 }
@@ -198,4 +220,9 @@ void schedule(void)
 	current_task->state = TASK_RUNNING;
 
 	CPU_SET_PSP(current_task->sp);
+}
+
+int sched_is_task_privileged(void)
+{
+	return (current_task->priv);
 }

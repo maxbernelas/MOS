@@ -37,4 +37,10 @@ int sched_init(void);
 /** Run scheduler and switch task if necessary */
 void schedule(void);
 
+/**
+ * Check if current task is privileged
+ * \return True if current task is privileged, false otherwise
+ */
+int sched_is_task_privileged(void);
+
 #endif

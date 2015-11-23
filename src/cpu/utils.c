@@ -147,11 +147,20 @@ uint32_t cpu_read_psr(void)
 	return reg;
 }
 
-void cpu_drop_privilege(void)
+void cpu_set_privilege(unsigned int priv)
 {
 	uint32_t val;
 
 	val = get_ctrl_reg();
-	val |= CPU_CTRL_REG_UNPRIV_BIT;
+
+	if(priv)
+	{
+		val &= ~(CPU_CTRL_REG_UNPRIV_BIT);
+	}
+	else
+	{
+		val |= CPU_CTRL_REG_UNPRIV_BIT;
+	}
+
 	set_ctrl_reg(val);
 }

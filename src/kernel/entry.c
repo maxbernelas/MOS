@@ -57,7 +57,7 @@ void kernel_entry(void)
 	memset(&__bss_start, 0x00,
 	       (unsigned char *)(&__bss_end) - (unsigned char *)(&__bss_start));
 
-	/* Initialise memory allocator */
+	/* Initialize memory allocator */
 	kalloc_init();
 
 	/* Initialize scheduler */

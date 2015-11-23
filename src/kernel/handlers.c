@@ -116,7 +116,9 @@ void handler_pendSV(void)
 
 	schedule();
 
+	cpu_set_privilege(sched_is_task_privileged());
 	cpu_task_restore_context();
+
 	CPU_RET_TO_USER();
 }
 

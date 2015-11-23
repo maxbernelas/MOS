@@ -45,9 +45,10 @@ void cpu_wfi(void);
 uint32_t cpu_read_psr(void);
 
 /**
- * Switch to unprivileged thread mode
+ * Set privilege level for thread mode
+ * \param[in] priv True to set thread as privileged, false for unprivileged
  */
-void cpu_drop_privilege(void);
+void cpu_set_privilege(unsigned int priv);
 
 /**
  * Get the value of the MSP
